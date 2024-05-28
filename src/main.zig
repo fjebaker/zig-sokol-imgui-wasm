@@ -17,6 +17,7 @@ export fn init() void {
 
     var desc: c.simgui_desc_t = .{};
     c.simgui_setup(&desc);
+    _ = c.ImPlot_CreateContext();
 
     var io: *c.ImGuiIO = @ptrCast(c.igGetIO());
     io.ConfigFlags |= c.ImGuiConfigFlags_NavEnableKeyboard;
@@ -51,6 +52,7 @@ export fn frame() void {
 }
 
 export fn cleanup() void {
+    c.ImPlot_DestroyContext(null);
     c.simgui_shutdown();
     sg.shutdown();
 }

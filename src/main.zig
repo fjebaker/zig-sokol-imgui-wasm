@@ -61,7 +61,7 @@ export fn event(ev: [*c]const sapp.Event) void {
 
 fn drawGui() !void {
     c.igShowDemoWindow(null);
-    //
+    c.ImPlot_ShowDemoWindow(null);
 }
 
 pub fn main() void {

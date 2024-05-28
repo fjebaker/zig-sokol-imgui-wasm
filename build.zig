@@ -1,6 +1,11 @@
 const std = @import("std");
 const sokol_build = @import("sokol");
 
+// helper function to build a LazyPath from the emsdk root and provided path components
+fn emSdkLazyPath(b: *std.Build, emsdk: *std.Build.Dependency, subPaths: []const []const u8) std.Build.LazyPath {
+    return emsdk.path(b.pathJoin(subPaths));
+}
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -30,6 +35,8 @@ pub fn build(b: *std.Build) !void {
         run = b.addRunArtifact(example);
     } else {
         // for WASM, need to build the Zig code as static library, since linking happens via emcc
+        const emsdk = sokol_dep.builder.dependency("emsdk", .{});
+
         const example = b.addStaticLibrary(.{
             .name = name,
             .root_source_file = root_source_file,
@@ -40,7 +47,14 @@ pub fn build(b: *std.Build) !void {
         example.addIncludePath(sokol_dep.path("src/cimgui/"));
         example.root_module.addImport("sokol", sokol_mod);
 
-        const emsdk = sokol_dep.builder.dependency("emsdk", .{});
+        example.addSystemIncludePath(emSdkLazyPath(b, emsdk, &.{
+            "upstream",
+            "emscripten",
+            "cache",
+            "sysroot",
+            "include",
+        }));
+
         const shell_path = sokol_dep.path("src/sokol/web/shell.html").getPath(sokol_dep.builder);
         const backend = sokol_build.resolveSokolBackend(
             .auto,

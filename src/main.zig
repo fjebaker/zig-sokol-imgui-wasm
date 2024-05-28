@@ -18,9 +18,14 @@ export fn init() void {
     var desc: c.simgui_desc_t = .{};
     c.simgui_setup(&desc);
 
+    var io: *c.ImGuiIO = @ptrCast(c.igGetIO());
+    io.ConfigFlags |= c.ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= c.ImGuiConfigFlags_DockingEnable;
+    io.FontGlobalScale = 1.0 / io.DisplayFramebufferScale.y;
+
     pass_action.colors[0] = .{
         .load_action = .CLEAR,
-        .clear_value = .{ .r = 1, .g = 1, .b = 0, .a = 1 },
+        .clear_value = .{ .r = 0, .g = 0, .b = 0, .a = 1 },
     };
     print("Backend: {}\n", .{sg.queryBackend()});
 }
@@ -33,9 +38,6 @@ export fn frame() void {
         .dpi_scale = sapp.dpiScale(),
     };
     c.simgui_new_frame(&new_frame);
-
-    const g = pass_action.colors[0].clear_value.g + 0.01;
-    pass_action.colors[0].clear_value.g = if (g > 1.0) 0.0 else g;
 
     drawGui() catch |err| {
         std.debug.print(">>> ERROR: {any}\n", .{err});

@@ -15,6 +15,8 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
     const sokol_mod = sokol_dep.module("sokol");
+    const imgui_dep = sokol_dep.builder.dependency("imgui", .{});
+    const imgui_include = imgui_dep.path("src");
 
     const name = "wgui";
     const root_source_file = b.path("src/main.zig");
@@ -29,7 +31,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
         });
         example.addIncludePath(sokol_dep.path("src/sokol/c"));
-        example.addIncludePath(sokol_dep.path("src/cimgui/"));
+        example.addIncludePath(imgui_include);
         example.root_module.addImport("sokol", sokol_mod);
         b.installArtifact(example);
         run = b.addRunArtifact(example);
@@ -44,7 +46,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
         });
         example.addIncludePath(sokol_dep.path("src/sokol/c"));
-        example.addIncludePath(sokol_dep.path("src/cimgui/"));
+        example.addIncludePath(imgui_include);
         example.root_module.addImport("sokol", sokol_mod);
 
         example.addSystemIncludePath(emSdkLazyPath(b, emsdk, &.{

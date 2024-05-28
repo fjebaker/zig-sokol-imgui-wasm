@@ -3,7 +3,14 @@
     .version = "0.0.0",
 
     .dependencies = .{
-        .sokol = .{ .path = "../sokol-zig" },
+        .zig_imgui = .{
+            .url = "https://github.com/fjebaker/zig-imgui-implot/archive/main.tar.gz",
+            .hash = "1220e5fb819043746e56345723d644fc3261f5a425701d1b5b2fc1198ee792394dce",
+        },
+        .sokol = .{
+            .url = "https://github.com/floooh/sokol-zig/archive/5f15d2feee0c39c449160a351cff6ac44da252ac.tar.gz",
+            .hash = "12207c7752a3e966ba776d730a1c19bec5fb4d31a59cccecbb2b147e30b6828ea910",
+        },
     },
 
     .paths = .{""},

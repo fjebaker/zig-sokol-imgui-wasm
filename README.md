@@ -8,6 +8,8 @@ zig build run
 
 ## WASM
 
+View it live [here](https://fjebaker.github.io/zig-sokol-imgui-wasm/).
+
 Build it yourself with:
 
 ```bash

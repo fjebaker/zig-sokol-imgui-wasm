@@ -48,6 +48,26 @@ pub fn build(b: *std.Build) !void {
     const name = "wgui";
     const root_source_file = b.path("src/main.zig");
 
+    // module to be used by downstream projects
+    const mod = b.addModule("zig-sokol-imgui-implot", .{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libcpp = true,
+    });
+    mod.addIncludePath(sokol_dep.path("src/sokol/c"));
+    mod.addIncludePath(imgui_include);
+    mod.addIncludePath(b.path("src"));
+    mod.addCSourceFile(
+        .{ .file = b.path("src/sokol_imgui.c"), .flags = &.{
+            "-DSOKOL_IMGUI_IMPL",
+            backend_cflags,
+        } },
+    );
+    mod.linkLibrary(imgui_lib);
+    mod.linkLibrary(implot_lib);
+    mod.addImport("sokol", sokol_mod);
+
     var run: ?*std.Build.Step.Run = null;
     if (!target.result.isWasm()) {
         // for native platforms, build into a regular executable
@@ -57,26 +77,14 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
+        example.root_module.addImport("imzokol", mod);
 
-        example.addIncludePath(sokol_dep.path("src/sokol/c"));
-        example.addIncludePath(imgui_include);
-        example.addIncludePath(b.path("src"));
-        example.addCSourceFile(
-            .{ .file = b.path("src/sokol_imgui.c"), .flags = &.{
-                "-DSOKOL_IMGUI_IMPL",
-                backend_cflags,
-            } },
-        );
-        example.linkLibCpp();
-
-        example.linkLibrary(imgui_lib);
-        example.linkLibrary(implot_lib);
-
-        example.root_module.addImport("sokol", sokol_mod);
-        b.installArtifact(example);
+        const install = b.addInstallArtifact(example, .{});
         run = b.addRunArtifact(example);
+        run.?.step.dependOn(&install.step);
     } else {
-        // for WASM, need to build the Zig code as static library, since linking happens via emcc
+        // for WASM, need to build the Zig code as static library, since
+        // linking happens via emcc
         const emsdk = sokol_dep.builder.dependency("emsdk", .{});
 
         const example = b.addStaticLibrary(.{
@@ -88,23 +96,13 @@ pub fn build(b: *std.Build) !void {
 
         imgui_lib.addSystemIncludePath(emSdkLazyPath(b, emsdk));
         implot_lib.addSystemIncludePath(emSdkLazyPath(b, emsdk));
-        example.addSystemIncludePath(emSdkLazyPath(b, emsdk));
+        mod.addSystemIncludePath(emSdkLazyPath(b, emsdk));
 
-        example.addIncludePath(sokol_dep.path("src/sokol/c"));
-        example.addIncludePath(imgui_include);
-        example.addIncludePath(b.path("src"));
-        example.addCSourceFile(
-            .{ .file = b.path("src/sokol_imgui.c"), .flags = &.{
-                "-DSOKOL_IMGUI_IMPL",
-                backend_cflags,
-            } },
-        );
+        example.root_module.addImport("imzokol", mod);
 
-        example.linkLibrary(imgui_lib);
-        example.linkLibrary(implot_lib);
-        example.root_module.addImport("sokol", sokol_mod);
-
-        const shell_path = sokol_dep.path("src/sokol/web/shell.html").getPath(sokol_dep.builder);
+        const shell_path = sokol_dep.path(
+            "src/sokol/web/shell.html",
+        ).getPath(sokol_dep.builder);
 
         const link_step = try sokol_build.emLinkStep(b, .{
             .lib_main = example,

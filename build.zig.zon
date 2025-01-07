@@ -9,7 +9,7 @@
         },
         .sokol = .{
             .url = "https://github.com/floooh/sokol-zig/archive/master.tar.gz",
-            .hash = "12207c7752a3e966ba776d730a1c19bec5fb4d31a59cccecbb2b147e30b6828ea910",
+            .hash = "1220a7e94b9331b0142419419841b7e414ae9caf01d481016c7324ada0e5d2fb1e0e",
         },
     },
 

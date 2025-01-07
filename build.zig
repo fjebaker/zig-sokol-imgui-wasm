@@ -102,7 +102,7 @@ pub fn build(b: *std.Build) !void {
 
         const shell_path = sokol_dep.path(
             "src/sokol/web/shell.html",
-        ).getPath(sokol_dep.builder);
+        );
 
         const link_step = try sokol_build.emLinkStep(b, .{
             .lib_main = example,

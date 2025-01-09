@@ -1,2 +1,3 @@
 pub const sokol = @import("sokol");
-pub usingnamespace @import("c.zig");
+pub const imgui = @import("imgui");
+pub const implot = @import("implot");

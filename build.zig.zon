@@ -3,13 +3,21 @@
     .version = "0.0.0",
 
     .dependencies = .{
-        .zig_imgui = .{
-            .url = "https://github.com/fjebaker/zig-imgui-implot/archive/main.tar.gz",
-            .hash = "1220e5fb819043746e56345723d644fc3261f5a425701d1b5b2fc1198ee792394dce",
-        },
         .sokol = .{
             .url = "https://github.com/floooh/sokol-zig/archive/master.tar.gz",
             .hash = "1220a7e94b9331b0142419419841b7e414ae9caf01d481016c7324ada0e5d2fb1e0e",
+        },
+        .implot = .{
+            .url = "https://github.com/epezent/implot/archive/1f7a8c0314d838a76695bccebe0f66864f507bc0.tar.gz",
+            .hash = "1220781bd0617c107617cc19d446801f519d5a29fc4beee9438c527f74af8caf483f",
+        },
+        .cimplot = .{
+            .url = "https://github.com/cimgui/cimplot/archive/master.tar.gz",
+            .hash = "12204b38616f63ea7cfebac18e98b57985a1fd9220f62baa341fd52fa058720a1113",
+        },
+        .imgui = .{
+            .url = "https://github.com/ocornut/imgui/archive/947aa9c9722bd6ff740dd757da609ff41f4d3ba3.tar.gz",
+            .hash = "1220ce4f606cb3ce8471f792dee481f8121de285f255855de14a6aba95364df88648",
         },
     },
 

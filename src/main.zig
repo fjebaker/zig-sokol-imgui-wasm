@@ -26,10 +26,10 @@ export fn init() void {
     sokol.imgui.simgui_setup(&desc);
     _ = imp.ImPlot_CreateContext();
 
-    // var io: *c.ImGuiIO = @ptrCast(c.igGetIO());
-    // io.ConfigFlags |= c.ImGuiConfigFlags_NavEnableKeyboard;
-    // io.ConfigFlags |= c.ImGuiConfigFlags_DockingEnable;
-    // io.FontGlobalScale = 1.0 / io.DisplayFramebufferScale.y;
+    var io: *ig.ImGuiIO = @ptrCast(ig.igGetIO());
+    io.ConfigFlags |= ig.ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ig.ImGuiConfigFlags_DockingEnable;
+    io.FontGlobalScale = 1.0 / io.DisplayFramebufferScale.y;
 
     state.pass_action.colors[0] = .{
         .load_action = .CLEAR,

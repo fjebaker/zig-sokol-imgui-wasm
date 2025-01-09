@@ -1,6 +1,6 @@
 # A sokol ImGui + ImPlot example in Zig
 
-Made with Zig 0.13.0-dev.274+c0da92f71. Should work with a few versions either side of that quite alright.
+Made with Zig 0.14.0-dev.2623+7aa95bc7f. Should work with a few versions either side of that quite alright.
 
 ```bash
 zig build run

@@ -3,6 +3,7 @@ const sokol_build = @import("sokol");
 
 fn cimplotModule(
     b: *std.Build,
+    sokol_dep: *std.Build.Dependency,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.Mode,
 ) *std.Build.Module {
@@ -28,8 +29,15 @@ fn cimplotModule(
         .name = "implot",
         .target = target,
         .optimize = optimize,
-        .link_libc = true,
     });
+
+    if (target.result.isWasm()) {
+        const dep_emsdk = sokol_dep.builder.dependency("emsdk", .{});
+        const emsdk_incl_path = dep_emsdk.path("upstream/emscripten/cache/sysroot/include");
+        lib_implot.addSystemIncludePath(emsdk_incl_path);
+    }
+
+    lib_implot.linkLibC();
     lib_implot.linkLibCpp();
 
     lib_implot.addIncludePath(implot_dep.path("."));
@@ -60,6 +68,7 @@ fn cimplotModule(
 
 fn cimguiModule(
     b: *std.Build,
+    sokol_dep: *std.Build.Dependency,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.Mode,
 ) *std.Build.Module {
@@ -68,19 +77,26 @@ fn cimguiModule(
         .optimize = optimize,
     });
 
-    const lib_cimgui = b.addStaticLibrary(.{
-        .name = "cimgui",
+    const lib_imgui = b.addStaticLibrary(.{
+        .name = "imgui",
         .target = target,
         .optimize = optimize,
-        .link_libc = true,
     });
-    lib_cimgui.linkLibCpp();
 
-    lib_cimgui.addIncludePath(imgui_dep.path("."));
-    lib_cimgui.addIncludePath(b.path("deps"));
+    if (target.result.isWasm()) {
+        const dep_emsdk = sokol_dep.builder.dependency("emsdk", .{});
+        const emsdk_incl_path = dep_emsdk.path("upstream/emscripten/cache/sysroot/include");
+        lib_imgui.addSystemIncludePath(emsdk_incl_path);
+    }
+
+    lib_imgui.linkLibC();
+    lib_imgui.linkLibCpp();
+
+    lib_imgui.addIncludePath(imgui_dep.path("."));
+    lib_imgui.addIncludePath(b.path("deps"));
 
     // add the imgui sources
-    lib_cimgui.addCSourceFiles(.{
+    lib_imgui.addCSourceFiles(.{
         .root = imgui_dep.path("."),
         .files = &.{
             "imgui_demo.cpp",
@@ -92,7 +108,7 @@ fn cimguiModule(
     });
 
     // add the cimgui sources
-    lib_cimgui.addCSourceFiles(.{
+    lib_imgui.addCSourceFiles(.{
         .files = &.{
             "deps/cimgui.cpp",
         },
@@ -116,7 +132,7 @@ fn cimguiModule(
         .link_libcpp = true,
     });
     // link the module
-    mod_cimgui.linkLibrary(lib_cimgui);
+    mod_cimgui.linkLibrary(lib_imgui);
     return mod_cimgui;
 }
 
@@ -131,8 +147,8 @@ pub fn build(b: *std.Build) !void {
         .with_sokol_imgui = true,
     });
 
-    const mod_cimgui = cimguiModule(b, target, optimize);
-    const mod_cimplot = cimplotModule(b, target, optimize);
+    const mod_cimgui = cimguiModule(b, sokol_dep, target, optimize);
+    const mod_cimplot = cimplotModule(b, sokol_dep, target, optimize);
 
     // inject the cimgui header search path into the sokol C library compile step
     sokol_dep.artifact("sokol_clib").addIncludePath(b.path("deps"));
@@ -150,7 +166,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     if (target.result.isWasm()) {
-        // try buildWasm(b, target, optimize, mod, sokol_dep);
+        try buildWasm(b, sokol_dep, target, optimize, mod);
     } else {
         try buildNative(b, target, optimize, mod);
     }
@@ -173,41 +189,26 @@ fn buildNative(
     b.step("run", "Run example").dependOn(&b.addRunArtifact(exe).step);
 }
 
-// the following from https://github.com/floooh/sokol-zig-imgui-sample
+// the following adapted from https://github.com/floooh/sokol-zig-imgui-sample
 fn buildWasm(
     b: *std.Build,
+    sokol_dep: *std.Build.Dependency,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.Mode,
     mod: *std.Build.Module,
-    sokol_dep: *std.Build.Dependency,
-    cimgui_dep: *std.Build.Dependency,
 ) !void {
-    // build the main file into a library, this is because the WASM 'exe'
-    // needs to be linked in a separate build step with the Emscripten linker
     const example = b.addStaticLibrary(.{
         .name = "example",
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("src/main.zig"),
     });
-    example.root_module.addImport("sokolgui", mod);
+    example.root_module.addImport("skgui", mod);
 
-    // get the Emscripten SDK dependency from the sokol dependency
     const dep_emsdk = sokol_dep.builder.dependency("emsdk", .{});
-
-    // need to inject the Emscripten system header include path into
-    // the cimgui C library otherwise the C/C++ code won't find
-    // C stdlib headers
     const emsdk_incl_path = dep_emsdk.path("upstream/emscripten/cache/sysroot/include");
-    cimgui_dep.artifact("cimgui_clib").addSystemIncludePath(emsdk_incl_path);
+    mod.addSystemIncludePath(emsdk_incl_path);
 
-    // all C libraries need to depend on the sokol library, when building for
-    // WASM this makes sure that the Emscripten SDK has been setup before
-    // C compilation is attempted (since the sokol C library depends on the
-    // Emscripten SDK setup step)
-    cimgui_dep.artifact("cimgui_clib").step.dependOn(&sokol_dep.artifact("sokol_clib").step);
-
-    // create a build step which invokes the Emscripten linker
     const link_step = try sokol_build.emLinkStep(b, .{
         .lib_main = example,
         .target = mod.resolved_target.?,
@@ -218,6 +219,7 @@ fn buildWasm(
         .use_filesystem = false,
         .shell_file_path = sokol_dep.path("src/sokol/web/shell.html"),
     });
+
     // ...and a special run step to start the web build output via 'emrun'
     const run = sokol_build.emRunStep(b, .{ .name = "example", .emsdk = dep_emsdk });
     run.step.dependOn(&link_step.step);
